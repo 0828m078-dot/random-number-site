@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>乱数ジェネレーター Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans JP', sans-serif; }
+    .font-display { font-family: 'Roboto', 'Noto Sans JP', sans-serif; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .result-appear { animation: fadeInUp 0.3s ease-out forwards; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+  </style>
+</head>
+<body class="h-full bg-[#0f172a] text-slate-200">
+  <div class="min-h-full flex flex-col items-center justify-center p-6">
+    <header class="text-center mb-6">
+      <h1 class="text-3xl font-bold font-display text-white text-shadow-sm">乱数ジェネレーター</h1>
+      <p class="text-sm text-slate-400">高度な重複制御と表示設定</p>
+    </header>
+
+    <main class="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl text-slate-800">
+      <div class="rounded-2xl p-4 mb-6 bg-[#1e293b] border-2 border-[#334155] min-h-[160px] flex flex-col items-center justify-center">
+        <div id="result" class="w-full text-center overflow-hidden text-indigo-400 font-bold font-display">
+          <span class="text-5xl">?</span>
+        </div>
+        <p id="result-label" class="mt-3 text-[10px] text-slate-500 font-medium uppercase tracking-wider text-center">設定を入力して生成</p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold mb-1 text-slate-500 font-body">最小値</label>
+            <input type="number" id="min-input" value="1" class="w-full px-3 py-2 rounded-lg border-2 border-slate-100 font-display focus:border-indigo-500 focus:outline-none transition-colors">
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1 text-slate-500 font-body">最大値</label>
+            <input type="number" id="max-input" value="100" class="w-full px-3 py-2 rounded-lg border-2 border-slate-100 font-display focus:border-indigo-500 focus:outline-none transition-colors">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold mb-1 text-slate-500 font-body">生成個数</label>
+            <input type="number" id="count-input" value="10" min="1" max="100" class="w-full px-3 py-2 rounded-lg border-2 border-slate-100 font-display focus:border-indigo-500 focus:outline-none transition-colors">
+          </div>
+          <div class="flex flex-col">
+            <label class="block text-xs font-bold mb-1 text-slate-500 font-body">表示方向</label>
+            <div class="flex bg-slate-100 rounded-lg p-1 h-full">
+              <button id="mode-horizontal" class="flex-1 px-2 py-1 text-[10px] font-bold rounded-md transition-all bg-white shadow-sm text-indigo-600">横並び</button>
+              <button id="mode-vertical" class="flex-1 px-2 py-1 text-[10px] font-bold rounded-md transition-all text-slate-500">縦並び</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="flex items-center justify-between">
+            <label for="allow-duplicate" class="text-sm font-bold text-slate-600 cursor-pointer">重複を許可する</label>
+            <input type="checkbox" id="allow-duplicate" class="w-5 h-5 accent-indigo-600 cursor-pointer" checked>
+          </div>
+          
+          <div id="duplicate-settings-wrapper" class="mt-3 space-y-3 pt-3 border-t border-slate-200">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase">1つの数値の最大出現回数</label>
+              <input type="number" id="duplicate-count-input" value="3" min="1" class="w-full px-2 py-1.5 rounded border text-sm font-display focus:ring-1 focus:ring-indigo-500 outline-none">
+            </div>
+
+            <div id="min-duplicate-container" class="pt-1">
+              <label for="min-duplicate-input" class="block text-xs font-medium mb-1.5 text-slate-500">各数値の最低出現回数</label>
+              <input type="number" id="min-duplicate-input" value="1" min="1" max="20" class="w-full px-3 py-2 rounded-lg border-2 transition-all font-display text-base border-slate-200 text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <p class="text-[10px] mt-1 text-slate-400 leading-tight">範囲内の各数値が少なくとも何回出現するか</p>
+            </div>
+          </div>
+        </div>
+
+        <button id="generate-btn" class="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-lg hover:bg-indigo-700 active:scale-95 transition-all shadow-lg shadow-indigo-200">
+          🎲 乱数を生成する
+        </button>
+      </div>
+
+      <div class="mt-6 flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-slate-400 uppercase">履歴</span>
+        <button id="clear-btn" class="text-[10px] text-slate-400 hover:text-red-500 transition-colors">クリア</button>
+      </div>
+      <div id="history" class="flex flex-wrap gap-1.5 min-h-[32px] mb-6"></div>
+
+      <div class="flex justify-center gap-4 text-xs text-slate-400">
+        <button onclick="openModal('terms-modal')" class="hover:underline hover:text-slate-600 transition-colors">利用規約</button>
+        <button onclick="openModal('privacy-modal')" class="hover:underline hover:text-slate-600 transition-colors">プライバシーポリシー</button>
+      </div>
+    </main>
+  </div>
+
+  <div id="modal-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg max-h-[80vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl text-slate-800">
+      <div class="p-6 border-b flex justify-between items-center">
+        <h3 id="modal-title" class="text-xl font-bold font-display text-slate-800"></h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-2xl transition-colors">&times;</button>
+      </div>
+      <div id="modal-content" class="p-6 overflow-y-auto text-sm leading-relaxed text-slate-600 custom-scroll"></div>
+      <div class="p-4 border-t text-center">
+        <button onclick="closeModal()" class="px-8 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-700 transition-colors">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- データ・定数 ---
+    const legalData = {
+      'terms-modal': {
+        title: '利用規約',
+        content: `<p class="mb-4 text-slate-500">本アプリ「乱数ジェネレーター」の利用条件を定めるものです。</p>
+          <h4 class="font-bold mb-2 text-slate-800">1. 禁止事項</h4>
+          <ul class="list-disc ml-4 mb-4">
+            <li>不正なアクセスやシステムの妨害行為。</li>
+            <li>公序良俗に反する目的での使用。</li>
+          </ul>
+          <h4 class="font-bold mb-2 text-slate-800">2. 免責事項</h4>
+          <p>生成される結果の正確性を保証するものではありません。使用による損害について開発者は一切の責任を負いません。</p>`
+      },
+      'privacy-modal': {
+        title: 'プライバシーポリシー',
+        content: `<p class="mb-4 text-slate-500">個人情報保護についての方針です。</p>
+          <h4 class="font-bold mb-2 text-slate-800">1. データの非送信</h4>
+          <p class="mb-4">本アプリはブラウザ上で動作します。入力設定や生成結果が外部サーバーに送信されることはありません。</p>
+          <h4 class="font-bold mb-2 text-slate-800">2. ストレージ利用</h4>
+          <p>設定保持のためにブラウザのローカル保存機能を利用する場合がありますが、外部への漏洩はありません。</p>`
+      }
+    };
+
+    const resultEl = document.getElementById('result');
+    const resultLabelEl = document.getElementById('result-label');
+    const historyEl = document.getElementById('history');
+    const allowDupCheckbox = document.getElementById('allow-duplicate');
+    const dupWrapper = document.getElementById('duplicate-settings-wrapper');
+    const primaryColor = '#6366f1';
+    let displayMode = 'horizontal';
+    let historyData = [];
+
+    // --- イベントリスナー & UI制御 ---
+    
+    // 重複チェックボックスの変更イベント
+    allowDupCheckbox.addEventListener('change', () => {
+      if (allowDupCheckbox.checked) {
+        dupWrapper.classList.remove('hidden');
+      } else {
+        dupWrapper.classList.add('hidden');
+      }
+    });
+
+    // 初期状態の反映
+    if (!allowDupCheckbox.checked) dupWrapper.classList.add('hidden');
+
+    function setDisplayMode(mode) {
+      displayMode = mode;
+      document.getElementById('mode-horizontal').className = mode === 'horizontal' ? 'flex-1 px-2 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-indigo-600' : 'flex-1 px-2 py-1 text-[10px] font-bold rounded-md text-slate-500';
+      document.getElementById('mode-vertical').className = mode === 'vertical' ? 'flex-1 px-2 py-1 text-[10px] font-bold rounded-md bg-white shadow-sm text-indigo-600' : 'flex-1 px-2 py-1 text-[10px] font-bold rounded-md text-slate-500';
+    }
+    document.getElementById('mode-horizontal').addEventListener('click', () => setDisplayMode('horizontal'));
+    document.getElementById('mode-vertical').addEventListener('click', () => setDisplayMode('vertical'));
+
+    // モーダル
+    function openModal(type) {
+      document.getElementById('modal-title').textContent = legalData[type].title;
+      document.getElementById('modal-content').innerHTML = legalData[type].content;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('modal-overlay').addEventListener('click', (e) => { if(e.target.id === 'modal-overlay') closeModal(); });
+
+    // --- 乱数生成ロジック ---
+    function generateRandomNumber() {
+      const min = parseInt(document.getElementById('min-input').value) || 0;
+      const max = parseInt(document.getElementById('max-input').value) || 100;
+      const count = parseInt(document.getElementById('count-input').value) || 1;
+      const allowDuplicate = allowDupCheckbox.checked;
+      const maxDup = parseInt(document.getElementById('duplicate-count-input').value) || 1;
+      const minDup = allowDuplicate ? (parseInt(document.getElementById('min-duplicate-input').value) || 0) : 0;
+      const range = max - min + 1;
+
+      // バリデーション
+      if (min > max) return showError('最小値が最大値を超えています');
+      if (allowDuplicate && minDup > maxDup) return showError('最低回数が最大回数を超えています');
+      if (allowDuplicate && (range * minDup) > count) return showError(`個数が不足しています（最低 ${range * minDup} 個必要です）`);
+      if (!allowDuplicate && count > range) return showError('重複なしでは数値が足りません');
+
+      let nums = [];
+      let counts = {};
+
+      // 1. 各数値の最低出現回数を確保
+      if (allowDuplicate && minDup > 0) {
+        for (let i = min; i <= max; i++) {
+          for (let j = 0; j < minDup; j++) {
+            nums.push(i);
+            counts[i] = (counts[i] || 0) + 1;
+          }
+        }
+      }
+
+      // 2. 残りをランダムに補充
+      let safety = 0;
+      while (nums.length < count && safety < 10000) {
+        safety++;
+        let r = Math.floor(Math.random() * range) + min;
+        if (!allowDuplicate ? !counts[r] : (counts[r] || 0) < maxDup) {
+          nums.push(r);
+          counts[r] = (counts[r] || 0) + 1;
+        }
+      }
+
+      // 3. シャッフル (Fisher-Yates)
+      for (let i = nums.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [nums[i], nums[j]] = [nums[j], nums[i]];
+      }
+
+      renderResults(nums);
+      updateHistory(nums);
+    }
+
+    function renderResults(nums) {
+      resultEl.classList.remove('result-appear');
+      void resultEl.offsetWidth;
+      resultEl.classList.add('result-appear');
+
+      if (nums.length === 1 && displayMode === 'horizontal') {
+        resultEl.innerHTML = `<span class="text-6xl font-bold font-display">${nums[0]}</span>`;
+      } else {
+        const containerClass = displayMode === 'horizontal' ? "flex flex-wrap justify-center gap-2" : "flex flex-col w-full gap-2 max-h-[250px] overflow-y-auto px-2 custom-scroll";
+        const html = nums.map((n, i) => {
+          if (displayMode === 'horizontal') {
+            return `<span class="px-3 py-1.5 rounded-lg text-2xl border-2" style="background-color: ${primaryColor}15; color: ${primaryColor}; border-color: ${primaryColor};">${n}</span>`;
+          } else {
+            return `<div class="flex items-center justify-between px-4 py-2 rounded-lg bg-slate-800 border-l-4" style="border-color: ${primaryColor};">
+                      <span class="text-[10px] font-bold text-slate-500 font-display">#${String(i+1).padStart(2,'0')}</span>
+                      <span class="text-xl font-display text-indigo-300 font-bold">${n}</span>
+                    </div>`;
+          }
+        }).join('');
+        resultEl.innerHTML = `<div class="${containerClass}">${html}</div>`;
+      }
+      resultLabelEl.textContent = `${nums.length}個の数値を生成しました`;
+    }
+
+    function updateHistory(nums) {
+      nums.forEach(n => { historyData.unshift(n); if (historyData.length > 20) historyData.pop(); });
+      historyEl.innerHTML = historyData.map(n => `<span class="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-display border border-slate-200 text-slate-600">${n}</span>`).join('');
+    }
+
+    function showError(m) { resultEl.innerHTML = `<span class="text-4xl">⚠️</span>`; resultLabelEl.textContent = m; }
+
+    document.getElementById('generate-btn').addEventListener('click', generateRandomNumber);
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      historyData = []; historyEl.innerHTML = ''; resultEl.innerHTML = '<span class="text-5xl">?</span>';
+    });
+  </script>
+</body>
+</html>
